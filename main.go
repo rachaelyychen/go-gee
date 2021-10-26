@@ -37,5 +37,15 @@ func main() {
 		})
 	})
 
+	// curl "localhost:9999/hello/rc"
+	r.GET("/hello/:name", func(c *gee.Context) {
+		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
+	})
+
+	// curl localhost:9999/assets/css/a.css
+	r.GET("/assets/*filepath", func(c *gee.Context) {
+		c.JSON(http.StatusOK, gee.H{"filepath": c.Param("filepath")})
+	})
+
 	r.Run(":9999")
 }
