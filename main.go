@@ -24,28 +24,34 @@ func main() {
 		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
 	})
 
-	// curl "localhost:9999/hello?name=rc"
-	r.GET("/hello", func(c *gee.Context) {
-		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
-	})
-
-	//  curl -X POST -d "username=rc" -d "password=rc" localhost:9999/login
-	r.POST("/login", func(c *gee.Context) {
-		c.JSON(http.StatusOK, gee.H{
-			"username": c.PostForm("username"),
-			"password": c.PostForm("password"),
+	v1 := r.Group("v1")
+	{
+		// curl "localhost:9999/v1/hello?name=rc"
+		v1.GET("/hello", func(c *gee.Context) {
+			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
 		})
-	})
 
-	// curl "localhost:9999/hello/rc"
-	r.GET("/hello/:name", func(c *gee.Context) {
-		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
-	})
+		//  curl -X POST -d "username=rc" -d "password=rc" localhost:9999/v1/login
+		v1.POST("/login", func(c *gee.Context) {
+			c.JSON(http.StatusOK, gee.H{
+				"username": c.PostForm("username"),
+				"password": c.PostForm("password"),
+			})
+		})
+	}
 
-	// curl localhost:9999/assets/css/a.css
-	r.GET("/assets/*filepath", func(c *gee.Context) {
-		c.JSON(http.StatusOK, gee.H{"filepath": c.Param("filepath")})
-	})
+	v2 := r.Group("v2")
+	{
+		// curl "localhost:9999/v2/hello/rc"
+		v2.GET("/hello/:name", func(c *gee.Context) {
+			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
+		})
+
+		// curl localhost:9999/v2/assets/css/a.css
+		v2.GET("/assets/*filepath", func(c *gee.Context) {
+			c.JSON(http.StatusOK, gee.H{"filepath": c.Param("filepath")})
+		})
+	}
 
 	r.Run(":9999")
 }
