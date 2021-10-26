@@ -19,12 +19,14 @@ import (
 func main() {
 	r := gee.New()
 
+	r.Use(gee.Logger) // global middleware
+
 	// curl localhost:9999/
 	r.GET("/", func(c *gee.Context) {
 		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
 	})
 
-	v1 := r.Group("v1")
+	v1 := r.Group("/v1")
 	{
 		// curl "localhost:9999/v1/hello?name=rc"
 		v1.GET("/hello", func(c *gee.Context) {
@@ -40,7 +42,8 @@ func main() {
 		})
 	}
 
-	v2 := r.Group("v2")
+	v2 := r.Group("/v2")
+	v2.Use(gee.OnlyForV2)
 	{
 		// curl "localhost:9999/v2/hello/rc"
 		v2.GET("/hello/:name", func(c *gee.Context) {

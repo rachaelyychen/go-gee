@@ -34,6 +34,9 @@ type Context struct {
 	Params map[string]string // 解析后的路由参数
 	// response info
 	StatusCode int
+	// middleware
+	handlers []HandlerFunc
+	index    int
 }
 
 func newContext(w http.ResponseWriter, req *http.Request) *Context {
@@ -42,6 +45,25 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index:  -1,
+	}
+}
+
+// 假设定义以下两个中间件：
+// func A(c *Context) {
+//    part1
+//    c.Next()
+//    part2
+// }
+// func B(c *Context) {
+//    part3
+//    c.Next()
+//    part4
+// }
+// c.handlers=[A, B, Handler]，则执行顺序为 part1 -> part3 -> Handler -> part 4 -> part2
+func (c *Context) Next() {
+	for c.index += 1; c.index < len(c.handlers); c.index++ {
+		c.handlers[c.index](c)
 	}
 }
 
