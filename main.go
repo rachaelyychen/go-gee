@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"html/template"
 	"net/http"
+	"time"
 
 	"gee"
 )
@@ -21,12 +24,17 @@ func main() {
 
 	r.Use(gee.Logger) // global middleware
 
-	// curl localhost:9999/assets/backgroudimage.jpeg
+	// curl localhost:9999/assets/image/backgroundimage.png
 	r.Static("/assets", "./static")
 
-	// curl localhost:9999/
+	r.SetFuncMap(template.FuncMap{
+		"FormatAsDate": FormatAsDate,
+	})
+	r.LoadHTMLGlob("templates/*")
+
+	// localhost:9999/
 	r.GET("/", func(c *gee.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+		c.HTML(http.StatusOK, "css.tmpl", nil)
 	})
 
 	v1 := r.Group("/v1")
@@ -60,4 +68,9 @@ func main() {
 	}
 
 	r.Run(":9999")
+}
+
+func FormatAsDate(t time.Time) string {
+	year, month, day := t.Date()
+	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
 }
