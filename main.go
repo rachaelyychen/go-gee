@@ -22,7 +22,9 @@ import (
 func main() {
 	r := gee.New()
 
-	r.Use(gee.Logger) // global middleware
+	// global middleware
+	r.Use(gee.Logger)
+	r.Use(gee.Recovery())
 
 	// curl localhost:9999/assets/image/backgroundimage.png
 	r.Static("/assets", "./static")
@@ -35,6 +37,13 @@ func main() {
 	// localhost:9999/
 	r.GET("/", func(c *gee.Context) {
 		c.HTML(http.StatusOK, "css.tmpl", nil)
+	})
+
+	// curl localhost:9999/panic
+	// index out of range for testing Recovery()
+	r.GET("/panic", func(c *gee.Context) {
+		var names []string
+		c.String(http.StatusOK, names[1])
 	})
 
 	v1 := r.Group("/v1")
