@@ -21,6 +21,9 @@ func main() {
 
 	r.Use(gee.Logger) // global middleware
 
+	// curl localhost:9999/assets/backgroudimage.jpeg
+	r.Static("/assets", "./static")
+
 	// curl localhost:9999/
 	r.GET("/", func(c *gee.Context) {
 		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
