@@ -39,6 +39,13 @@ func main() {
 		c.HTML(http.StatusOK, "css.tmpl", nil)
 	})
 
+	// localhost:9999/raw
+	r.GET("/raw", func(c *gee.Context) {
+		c.HTML(http.StatusOK, "raw.tmpl", map[string]interface{}{
+			"now": time.Date(2017, 07, 01, 0, 0, 0, 0, time.UTC),
+		})
+	})
+
 	// curl localhost:9999/panic
 	// index out of range for testing Recovery()
 	r.GET("/panic", func(c *gee.Context) {

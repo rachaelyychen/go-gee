@@ -33,8 +33,8 @@ type Engine struct {
 	*RouterGroup
 	router        *router
 	groups        []*RouterGroup     // store all groups
-	htmlTemplates *template.Template // for html render
-	funcMap       template.FuncMap   // for html render 自定义模版渲染函数
+	htmlTemplates *template.Template // for html render 所有模版
+	funcMap       template.FuncMap   // for html render 所有自定义模版渲染函数，加载后模版中可以直接使用
 }
 
 // New is the constructor of gee.Engine
