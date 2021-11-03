@@ -19,21 +19,41 @@ func (f GetterFunc) Get(key string) ([]byte, error) {
 	return f(key)
 }
 
-// 缓存主体 Group 的逻辑：
-//                            是
-// 接收 key --> 检查是否被缓存 -----> 返回缓存值 ⑴
-//                |  否                        是
-//                |-----> 是否应当从远程节点获取 -----> 使用一致性哈希选择节点          是                                    是
-//                             | 否                        |-----> 是否是远程节点 -----> HTTP 客户端访问远程节点 --> 成功？-----> 服务端返回返回值 ⑵
-//                             |                                    |  否                                    ↓  否
-//                             |                                    |----------------------------> 回退到本地节点处理。
-//                             |-----> 调用`回调函数`，获取值并添加到缓存 --> 返回缓存值 ⑶
-
 // A Group is a cache namespace and associated data loaded spread over
 type Group struct {
 	name      string
 	getter    Getter
 	mainCache cache
+	peers     PeerPicker
+}
+
+// RegisterPeers registers a PeerPicker for choosing remote peer
+func (g *Group) RegisterPeers(peers PeerPicker) {
+	if g.peers != nil {
+		panic("RegisterPeerPicker called more than once")
+	}
+	g.peers = peers
+}
+
+func (g *Group) load(key string) (value ByteView, err error) {
+	if g.peers != nil {
+		if peer, ok := g.peers.PickPeer(key); ok {
+			if value, err = g.getFromPeer(peer, key); err == nil {
+				return value, nil
+			}
+			log.Println("[GeeCache] Failed to get from peer", err)
+		}
+	}
+
+	return g.getLocally(key)
+}
+
+func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
+	bytes, err := peer.Get(g.name, key)
+	if err != nil {
+		return ByteView{}, err
+	}
+	return ByteView{b: bytes}, nil
 }
 
 var (
@@ -67,6 +87,14 @@ func GetGroup(name string) *Group {
 }
 
 // Get value for a key from cache
+//                            是
+// 接收 key --> 检查是否被缓存 -----> 返回缓存值 ⑴
+//                |  否                        是
+//                |-----> 是否应当从远程节点获取 -----> 使用一致性哈希选择节点          是                                    是
+//                             | 否                        |-----> 是否是远程节点 -----> HTTP 客户端访问远程节点 --> 成功？-----> 服务端返回返回值 ⑵
+//                             |                                      |  否                                     ↓  否
+//                             |                                      |----------------------------> 回退到本地节点处理。
+//                             |-----> 调用`回调函数`，获取值并添加到缓存 --> 返回缓存值 ⑶
 func (g *Group) Get(key string) (ByteView, error) {
 	if key == "" {
 		return ByteView{}, fmt.Errorf("key is required")
@@ -78,10 +106,6 @@ func (g *Group) Get(key string) (ByteView, error) {
 	}
 
 	return g.load(key)
-}
-
-func (g *Group) load(key string) (value ByteView, err error) {
-	return g.getLocally(key)
 }
 
 func (g *Group) getLocally(key string) (ByteView, error) {
